@@ -231,7 +231,15 @@ async function task_1_10(db) {
  *
  */
 async function task_1_11(db) {
-    throw new Error("Not implemented");
+    let result = await db.query(`
+        SELECT 
+            ProductName,
+            UnitPrice
+        FROM Products
+        WHERE UnitPrice BETWEEN 5 AND 15
+        ORDER BY UnitPrice, ProductName;
+    `);
+    return result[0];
 }
 
 /**
@@ -244,7 +252,16 @@ async function task_1_11(db) {
  *
  */
 async function task_1_12(db) {
-    throw new Error("Not implemented");
+    let result = await db.query(`
+        SELECT * FROM 
+            (SELECT 
+                ProductName,
+                UnitPrice 
+            FROM Products
+            ORDER BY UnitPrice DESC LIMIT 20) p
+        ORDER BY UnitPrice, ProductName;
+    `);
+    return result[0];
 }
 
 /**
@@ -255,7 +272,16 @@ async function task_1_12(db) {
  *
  */
 async function task_1_13(db) {
-    throw new Error("Not implemented");
+    let result = await db.query(`
+        SELECT 
+            COUNT(*) as 'TotalOfCurrentProducts',
+            (SELECT 
+                COUNT(*) 
+            FROM Products 
+            WHERE Discontinued=1) as 'TotalOfDiscontinuedProducts'
+        FROM Products;
+    `);
+    return result[0];
 }
 
 /**
@@ -266,7 +292,15 @@ async function task_1_13(db) {
  *
  */
 async function task_1_14(db) {
-    throw new Error("Not implemented");
+    let result = await db.query(`
+        SELECT 
+            ProductName,
+            UnitsOnOrder,
+            UnitsInStock
+        FROM Products
+        WHERE UnitsOnOrder > UnitsInStock;
+    `);
+    return result[0];
 }
 
 /**
