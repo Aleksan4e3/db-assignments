@@ -275,10 +275,7 @@ async function task_1_13(db) {
     let result = await db.query(`
         SELECT 
             COUNT(*) as 'TotalOfCurrentProducts',
-            (SELECT 
-                COUNT(*) 
-            FROM Products 
-            WHERE Discontinued=1) as 'TotalOfDiscontinuedProducts'
+            SUM(Discontinued) 'TotalOfDiscontinuedProducts'
         FROM Products;
     `);
     return result[0];
@@ -311,7 +308,24 @@ async function task_1_14(db) {
  *
  */
 async function task_1_15(db) {
-    throw new Error("Not implemented");
+    let result = await db.query(`
+        SELECT
+            SUM(MONTH(OrderDate)=1) as 'January',
+            SUM(MONTH(OrderDate)=2) as 'February',
+            SUM(MONTH(OrderDate)=3) as 'March',
+            SUM(MONTH(OrderDate)=4) as 'April',
+            SUM(MONTH(OrderDate)=5) as 'May',
+            SUM(MONTH(OrderDate)=6) as 'June',
+            SUM(MONTH(OrderDate)=7) as 'July',
+            SUM(MONTH(OrderDate)=8) as 'August',
+            SUM(MONTH(OrderDate)=9) as 'September',
+            SUM(MONTH(OrderDate)=10) as 'October',
+            SUM(MONTH(OrderDate)=11) as 'November',
+            SUM(MONTH(OrderDate)=12) as 'December'
+        FROM Orders
+        WHERE YEAR(OrderDate)=1997;
+    `);
+    return result[0];
 }
 
 /**
@@ -322,7 +336,15 @@ async function task_1_15(db) {
  *
  */
 async function task_1_16(db) {
-    throw new Error("Not implemented");
+    let result = await db.query(`
+        SELECT
+            OrderID,
+            CustomerID,
+            ShipCountry
+        FROM Orders
+        WHERE ShipPostalCode IS NOT NULL;
+    `);
+    return result[0];
 }
 
 /**
@@ -335,7 +357,17 @@ async function task_1_16(db) {
  *
  */
 async function task_1_17(db) {
-    throw new Error("Not implemented");
+    let result = await db.query(`
+        SELECT
+            CategoryName,
+            ROUND(AVG(UnitPrice), 4) as 'AvgPrice'
+        FROM Categories c
+        LEFT JOIN Products p
+        ON c.CategoryID=p.CategoryID
+        GROUP BY c.CategoryID
+        ORDER BY \`AvgPrice\` DESC, CategoryName;
+    `);
+    return result[0];
 }
 
 /**
@@ -347,7 +379,15 @@ async function task_1_17(db) {
  *
  */
 async function task_1_18(db) {
-    throw new Error("Not implemented");
+    let result = await db.query(`
+        SELECT
+            DATE_FORMAT(OrderDate, '%Y-%m-%d %T') as 'OrderDate',
+            COUNT(*) as 'Total Number of Orders'
+        FROM Orders
+        WHERE YEAR(OrderDate)=1998
+        GROUP BY OrderDate;
+    `);
+    return result[0];
 }
 
 /**
@@ -359,7 +399,19 @@ async function task_1_18(db) {
  *
  */
 async function task_1_19(db) {
-    throw new Error("Not implemented");
+    let result = await db.query(`
+        SELECT
+            c.CustomerID,
+            CompanyName,
+            SUM(od.UnitPrice*od.Quantity) as 'TotalOrdersAmount, $'
+        FROM Customers c
+        LEFT JOIN Orders o ON c.CustomerID=o.CustomerID
+        LEFT JOIN OrderDetails od ON od.OrderID=o.OrderID
+        GROUP BY c.CustomerID
+        HAVING \`TotalOrdersAmount, $\` > 10000
+        ORDER BY \`TotalOrdersAmount, $\` DESC, CustomerID;
+    `);
+    return result[0];
 }
 
 /**
@@ -371,7 +423,19 @@ async function task_1_19(db) {
  *
  */
 async function task_1_20(db) {
-    throw new Error("Not implemented");
+    let result = await db.query(`
+        SELECT
+            e.EmployeeID,
+            CONCAT(FirstName, ' ', LastName) as 'Employee Full Name',
+            SUM(od.UnitPrice*od.Quantity) as 'Amount, $'
+        FROM Employees e
+        LEFT JOIN Orders o ON e.EmployeeID=o.EmployeeID
+        LEFT JOIN OrderDetails od ON od.OrderID=o.OrderID
+        GROUP BY e.EmployeeID
+        ORDER BY \`Amount, $\` DESC
+        LIMIT 1;
+    `);
+    return result[0];
 }
 
 /**
@@ -381,7 +445,16 @@ async function task_1_20(db) {
  * @return {array}
  */
 async function task_1_21(db) {
-    throw new Error("Not implemented");
+    let result = await db.query(`
+        SELECT
+            OrderID,
+            SUM(UnitPrice*Quantity) as 'Maximum Purchase Amount, $'
+        FROM OrderDetails
+        GROUP BY OrderID
+        ORDER BY SUM(UnitPrice*Quantity) DESC
+        LIMIT 1;
+    `);
+    return result[0];
 }
 
 /**
