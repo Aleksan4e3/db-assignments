@@ -48,7 +48,7 @@ async function task_1_2(db) {
             OrderID as 'Order Id',
             sum(UnitPrice*Quantity) as 'Order Total Price',
             ROUND(sum(Quantity*Discount)*100/sum(UnitPrice*Quantity) ,3) as 'Total Order Discount, %'
-        FROM Orderdetails
+        FROM OrderDetails
         GROUP BY OrderID
         ORDER BY OrderID desc;
     `);
