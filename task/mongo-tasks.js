@@ -58,23 +58,6 @@ async function task_1_1(db) {
 async function task_1_2(db) {
     const result = await db.collection('order-details').aggregate([
         {
-            $lookup: {
-                from: 'products',
-                localField: 'ProductID',
-                foreignField: 'ProductID',
-                as: 'product_docs'
-            }
-        },
-        {
-            $replaceRoot: {
-                newRoot: {
-                    $mergeObjects: [{
-                        $arrayElemAt: ["$product_docs", 0]
-                    }, "$$ROOT"]
-                }
-            }
-        },
-        {
             $group: {
                 _id: "$OrderID",
                 "Order Total Price": {
@@ -88,7 +71,7 @@ async function task_1_2(db) {
                     }
                 }
             }
-        },
+        }, 
         {
             $project: {
                 _id: 0,
@@ -104,7 +87,7 @@ async function task_1_2(db) {
                     }, 3]
                 }
             }
-        },
+        }, 
         { $sort: { "Order Id": -1 } }
     ]).toArray();
     return result;
