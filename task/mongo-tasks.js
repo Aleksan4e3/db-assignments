@@ -71,7 +71,7 @@ async function task_1_2(db) {
                     }
                 }
             }
-        }, 
+        },
         {
             $project: {
                 _id: 0,
@@ -87,7 +87,7 @@ async function task_1_2(db) {
                     }, 3]
                 }
             }
-        }, 
+        },
         { $sort: { "Order Id": -1 } }
     ]).toArray();
     return result;
@@ -412,7 +412,12 @@ async function task_1_12(db) {
  * HINT: That's acceptable to make it in 2 queries
  */
 async function task_1_13(db) {
-    throw new Error("Not implemented");
+    const allProducts = await db.collection('products').countDocuments();
+    const discontinued = await db.collection('products').countDocuments({ Discontinued: 1 });
+    return {
+        "TotalOfCurrentProducts": allProducts,
+        "TotalOfDiscontinuedProducts": discontinued
+    };
 }
 
 /**
@@ -453,7 +458,65 @@ async function task_1_14(db) {
  *       https://docs.mongodb.com/manual/reference/operator/aggregation/dateFromString/
  */
 async function task_1_15(db) {
-    throw new Error("Not implemented");
+    const result = await db.collection('orders').aggregate([
+        {
+            $match: {
+                $expr: {
+                    $eq: [{
+                        $year: {
+                            $dateFromString: {
+                                dateString: "$OrderDate"
+                            }
+                        }
+                    }, 1997]
+                }
+            }
+        },
+        {
+            $group: {
+                _id: {
+                    $month: {
+                        $dateFromString: {
+                            dateString: "$OrderDate"
+                        }
+                    }
+                },
+                count: {
+                    $sum: 1
+                }
+            }
+        },
+        {
+            $project: {
+                months: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
+                count: 1
+            }
+        },
+        { $sort: { _id: 1 } },
+        {
+            $group: {
+                _id: "NULL",
+                result: {
+                    $push: {
+                        k: {
+                            $arrayElemAt: ["$months", {
+                                $subtract: ["$_id", 1]
+                            }]
+                        },
+                        v: "$count"
+                    }
+                }
+            }
+        },
+        {
+            $project: {
+                result: {
+                    $arrayToObject: "$result"
+                }
+            }
+        }
+    ]).toArray();
+    return result[0].result;
 }
 
 /**
