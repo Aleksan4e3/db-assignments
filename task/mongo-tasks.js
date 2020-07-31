@@ -21,7 +21,9 @@
  * Test timeout is increased to 15sec for the function.
  * */
 async function before(db) {
-    await db.collection('employees').ensureIndex({CustomerID: 1});
+    await db.collection('order-details').ensureIndex({ OrderID: 1 });
+    await db.collection('orders').ensureIndex({ CustomerID: 1 });
+    await db.collection('products').ensureIndex({ ProductID: 1 });
 }
 
 /**
@@ -801,7 +803,154 @@ async function task_1_21(db) {
  *       https://docs.mongodb.com/manual/reference/operator/aggregation/lookup/#join-conditions-and-uncorrelated-sub-queries
  */
 async function task_1_22(db) {
-    throw new Error("Not implemented");
+    const result = await db.collection('customers').aggregate([
+        {
+            $lookup: {
+                from: 'orders',
+                let: {
+                    ord_customer: "$CustomerID"
+                },
+                pipeline: [{
+                    $match: {
+                        $expr: {
+                            $eq: ["$CustomerID", "$$ord_customer"]
+                        }
+                    }
+                },
+                {
+                    $project: {
+                        "_id": 0,
+                        "OrderID": 1
+                    }
+                }
+                ],
+                as: 'order_docs'
+            }
+        },
+        { $unwind: { path: "$order_docs" } },
+        {
+            $replaceRoot: {
+                newRoot: {
+                    $mergeObjects: ["$order_docs", "$$ROOT"]
+                }
+            }
+        },
+        {
+            $lookup: {
+                from: 'order-details',
+                let: {
+                    ord_orddet: "$OrderID"
+                },
+                pipeline: [{
+                    $match: {
+                        $expr: {
+                            $eq: ["$OrderID", "$$ord_orddet"]
+                        }
+                    }
+                },
+                {
+                    $project: {
+                        _id: 0,
+                        ProductID: 1,
+                        UnitPrice: 1
+                    }
+                }
+                ],
+                as: 'orddet_docs'
+            }
+        },
+        { $unwind: { path: "$orddet_docs" } },
+        {
+            $replaceRoot: {
+                newRoot: {
+                    $mergeObjects: ["$orddet_docs", "$$ROOT"]
+                }
+            }
+        },
+        {
+            $lookup: {
+                from: 'products',
+                let: {
+                    orddet_prod: "$ProductID"
+                },
+                pipeline: [{
+                    $match: {
+                        $expr: {
+                            $eq: ["$ProductID", "$$orddet_prod"]
+                        }
+                    }
+                },
+                {
+                    $project: {
+                        _id: 0,
+                        ProductName: 1
+                    }
+                }
+                ],
+                as: 'product_docs'
+            }
+        },
+        {
+            $replaceRoot: {
+                newRoot: {
+                    $mergeObjects: [{
+                        $arrayElemAt: ["$product_docs", 0]
+                    }, "$$ROOT"]
+                }
+            }
+        },
+        {
+            $group: {
+                _id: "$CustomerID",
+                maxPrice: {
+                    $max: "$UnitPrice"
+                },
+                otherData: {
+                    $push: {
+                        CompanyName: "$CompanyName",
+                        ProductName: "$ProductName",
+                        UnitPrice: "$UnitPrice"
+                    }
+                }
+            }
+        },
+        {
+            $project: {
+                otherData: {
+                    $filter: {
+                        input: "$otherData",
+                        as: "data",
+                        cond: {
+                            $eq: ["$$data.UnitPrice", "$maxPrice"]
+                        }
+                    }
+                }
+            }
+        },
+        {
+            $project: {
+                _id: 0,
+                CustomerID: "$_id",
+                CompanyName: {
+                    $arrayElemAt: ["$otherData.CompanyName", 0]
+                },
+                ProductName: {
+                    $arrayElemAt: ["$otherData.ProductName", 0]
+                },
+                PricePerItem: {
+                    $arrayElemAt: ["$otherData.UnitPrice", 0]
+                }
+            }
+        },
+        {
+            $sort: {
+                PricePerItem: -1,
+                CompanyName: 1,
+                ProductName: 1
+            }
+        }
+    ]).toArray();
+    return result;
 }
 
 module.exports = {
