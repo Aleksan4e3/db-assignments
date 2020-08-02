@@ -15,7 +15,7 @@ const ObjectId = require('mongodb').ObjectID;
  * Test timeout is increased to 60sec for the function.
  * */
 async function before(db) {
-    await db.collection('opportunities').createIndex({'initiativeId': 1});
+    await db.collection('clientCriteria').createIndex({'value': 1});
 }
 
 /**
@@ -39,8 +39,6 @@ async function before(db) {
  *   8. That's possible to rewrite a few last steps to merge a few pipeline steps in one.
  */
 async function task_3_1(db) {
-    throw new Error("Not implemented"); //remove the line before starting the task
-
     const result = await db.collection('opportunities').aggregate([
         {
             "$match" : {
@@ -61,7 +59,27 @@ async function task_3_1(db) {
             }
         },
         {
-            "$unwind" : "$contacts"
+            "$project" : {
+                "_id" : 1,
+                "contacts.id" : 1,
+                "contacts.questions.criteria_value" : 1,
+                "contacts.questions.label" : 1,
+                "contacts.questions.raw_text" : 1,
+                "contacts.questions.id" : 1,
+                "contacts.questions.answers" : 1,
+                "contacts.questions.category_id" : 1,
+                "contacts.win_vendor" : 1,
+                "contacts.datePublished" : 1,
+                "contacts.shortListedVendors.name" : 1,
+                "contacts.shortListedVendors.value" : 1,
+                "contacts.shortListedVendors.is_selected" : 1
+            }
+        },
+        {
+            "$unwind" : {
+                path:"$contacts",
+                includeArrayIndex: "arrayIndex"
+            }
         },
         {
             "$match" : {
@@ -94,7 +112,23 @@ async function task_3_1(db) {
             }
         },
         {
-            "$unwind" : "$contacts.questions"
+            "$project" : {
+                "_id" : 1,
+                "contacts.id" : 1,
+                "contacts.questions.criteria_value" : 1,
+                "contacts.questions.label" : 1,
+                "contacts.questions.raw_text" : 1,
+                "contacts.questions.id" : 1,
+                "contacts.questions.answers" : 1,
+                "contacts.questions.category_id" : 1,
+                "contacts.win_vendor" : 1
+            }
+        },
+        {
+            "$unwind" : {
+                path:"$contacts.questions",
+                includeArrayIndex: "arrayIndex"
+            }
         },
         {
             "$match" : {
@@ -140,7 +174,10 @@ async function task_3_1(db) {
             }
         },
         {
-            "$unwind" : "$contacts.questions.answers"
+            "$unwind" : {
+                path:"$contacts.questions.answers",
+                includeArrayIndex: "arrayIndex"
+            }
         },
         {
             "$match" : {
@@ -150,7 +187,10 @@ async function task_3_1(db) {
             }
         },
         {
-            "$unwind" : "$contacts.questions.answers.loopInstances"
+            "$unwind" : {
+                path:"$contacts.questions.answers.loopInstances",
+                includeArrayIndex: "arrayIndex"
+            }
         },
         {
             "$project" : {
@@ -249,10 +289,32 @@ async function task_3_1(db) {
             }
         },
         {
-            "$unwind" : "$criteria"
+            "$project" : {
+                "criteria.versions.initiativeId":1,
+                "contacts.questions.answers.primary_answer_value" : 1,
+                "contacts.questions.answers.primary_answer_text" : 1,
+                "contacts.id":1,
+                "contacts.questions.category_id":1,
+                "contacts.questions.id":1,
+                "contacts.questions.answers.loopInstances.loop_instance":1,
+                "contacts.questions.answers.loopInstances.is_selected":1,
+                "criteria_value":1,
+                "criteria.label":1,
+                "criteria.versions.definition":1,
+                "criteria.definition":1
+            }
         },
         {
-            "$unwind" : "$criteria.versions"
+            "$unwind" : {
+                path:"$criteria",
+                includeArrayIndex: "arrayIndex"
+            }
+        },
+        {
+            "$unwind" : {
+                path:"$criteria.versions",
+                includeArrayIndex: "arrayIndex"
+            }
         },
         {
             "$match" : {
