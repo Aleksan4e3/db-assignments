@@ -43,19 +43,38 @@ async function task_3_1(db) {
         {
             "$match" : {
                 "initiativeId" : ObjectId("58af4da0b310d92314627290"),
-                "contacts.questions.category_id" : {
-                    "$in" : [
-                        105,
-                        147
-                    ]
-                },
                 "contacts" : {
                     "$elemMatch" : {
                         "datePublished" : {
                             "$ne" : null
                         }
                     }
-                }
+                },
+                "contacts.shortListedVendors" : {
+                    "$elemMatch" : {
+                        "$or" : [
+                            {
+                                "name" : "ADP",
+                                "is_selected" : true
+                            },
+                            {
+                                "value" : {
+                                    "$in" : [
+                                        50
+                                    ],
+                                    "$lt" : 9000
+                                },
+                                "is_selected" : true
+                            }
+                        ]
+                    }
+                },
+                "contacts.questions.category_id" : {
+                    "$in" : [
+                        105,
+                        147
+                    ]
+                }               
             }
         },
         {
@@ -85,11 +104,7 @@ async function task_3_1(db) {
             "$match" : {
                 "contacts.datePublished" : {
                     "$ne" : null
-                }
-            }
-        },
-        {
-            "$match" : {
+                },
                 "contacts.shortListedVendors" : {
                     "$elemMatch" : {
                         "$or" : [
@@ -108,6 +123,12 @@ async function task_3_1(db) {
                             }
                         ]
                     }
+                },
+                "contacts.questions.category_id" : {
+                    "$in" : [
+                        105,
+                        147
+                    ]
                 }
             }
         },
@@ -137,11 +158,7 @@ async function task_3_1(db) {
                         105,
                         147
                     ]
-                }
-            }
-        },
-        {
-            "$match" : {
+                },
                 "$nor" : [
                     {
                         "contacts.questions.category_id" : 105,
@@ -172,7 +189,7 @@ async function task_3_1(db) {
                     }
                 ]
             }
-        },
+        },        
         {
             "$unwind" : {
                 path:"$contacts.questions.answers",
@@ -308,6 +325,11 @@ async function task_3_1(db) {
             "$unwind" : {
                 path:"$criteria",
                 includeArrayIndex: "arrayIndex"
+            }
+        },
+        {
+            "$match" : {
+                "criteria.versions.initiativeId" : ObjectId("58af4da0b310d92314627290")
             }
         },
         {
